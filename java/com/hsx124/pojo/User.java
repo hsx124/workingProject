@@ -9,6 +9,15 @@ public class User {
 	private Iphone ihpone;
 	private GiftCard giftCard;
 	private String payMethod;
+	private AppleAccount appleAccount;
+
+	public AppleAccount getAppleAccount() {
+		return appleAccount;
+	}
+
+	public void setAppleAccount(AppleAccount appleAccount) {
+		this.appleAccount = appleAccount;
+	}
 
 	public String getFirstName() {
 		return this.firstName;
@@ -74,11 +83,11 @@ public class User {
 		this.payMethod = payMethod;
 	}
 
+	@Override
 	public String toString() {
-		return "User [firstName=" + this.firstName + ", lastName=" + this.lastName + ", email=" + this.email
-				+ ", mobile=" + this.mobile +
-				", creditCard=" + this.creditCard + ", ihpone=" + this.ihpone + ", giftCard=" + this.giftCard
-				+ ", payMethod=" +
-				this.payMethod + "]";
+		return "User [firstName=" + firstName + ", lastName=" + lastName + ", email=" + email + ", mobile=" + mobile
+				+ ", creditCard=" + creditCard + ", ihpone=" + ihpone + ", giftCard=" + giftCard + ", payMethod="
+				+ payMethod + ", appleAccount=" + appleAccount + "]";
 	}
+
 }

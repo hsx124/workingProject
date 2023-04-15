@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -31,6 +32,8 @@ import com.hsx124.pojo.Iphone;
 import com.hsx124.pojo.User;
 import com.hsx124.webconst.PageConst;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
+
 public class ToolUtil
 		implements PageConst {
 	private long waitLoadBaseTime = 1850L;
@@ -39,33 +42,60 @@ public class ToolUtil
 
 	private String targetPath;
 
+	/**
+	 * 初期化
+	 */
 	public void init() {
-		System.setProperty("webdriver.chrome.driver", "E:\\order\\chromedriver.exe");
+		//		System.setProperty("webdriver.chrome.driver", "E:\\order\\chromedriver.exe");
+		WebDriverManager.chromedriver().setup();
 	}
 
+	public void setManage(WebDriver driver) {
+		driver.manage().window().maximize();
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(PAGE_WAIT_TIME));
+		driver.manage().timeouts().scriptTimeout(Duration.ofMinutes(SCRIPT_WAIT_TIME));
+		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(PAGE_LOAD_TIME));
+	}
+
+	/**
+	 * スリープ時間の設定
+	 * @throws Exception
+	 */
 	public void randomSleep() throws Exception {
 		long time = this.waitLoadBaseTime + this.random.nextInt(this.waitLoadRandomTime);
 		Thread.sleep(time);
 	}
 
+	/**
+	 * ウェブページのハートコピーを取得
+	 * @param driver
+	 * @throws IOException
+	 */
 	public void savePicture(WebDriver driver) throws IOException {
 		String directoryName = getTargetPath();
 		File file = new File(directoryName);
 		if (!file.exists()) {
 			file.mkdirs();
 		}
-		File screenshotAs = (File) ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+		File screenshotAs = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
 		Path path = Paths.get(screenshotAs.toURI());
 		Path to = Paths.get(String.valueOf(directoryName) + File.separator +
 				LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddhhmmssSS")) + ".png", new String[0]);
 		Files.move(path, to, new java.nio.file.CopyOption[0]);
 	}
 
+	/**
+	 * フォルダ名のリネーム
+	 * @param driver
+	 * @param ur　ユーザインスタンス
+	 * @param out
+	 * @throws IOException
+	 */
 	public void folderRename(WebDriver driver, User ur, PrintWriter out) throws IOException {
 		savePicture(driver);
 		String targetPath = getTargetPath();
 		File file = new File(targetPath);
-		file.renameTo(new File(String.valueOf(targetPath) + "_オーダー失敗"));
+		file.renameTo(new File(targetPath + "_オーダー失敗"));
 
 		System.out.println("####################" +
 				ur.getLastName() + "　" + ur.getFirstName() + "　" + ur.getIhpone().getModel() + "　" +
@@ -77,23 +107,22 @@ public class ToolUtil
 				ur.getIhpone().getCapacity() + "オーダー失敗しました。####################");
 	}
 
+	/**
+	 * パス取得
+	 * @return
+	 */
 	public String getTargetPath() {
 		return this.targetPath;
 	}
 
 	public void setSavePicturePath(String... args) {
 		StringBuilder sb = new StringBuilder();
-		byte b;
-		int i;
-		String[] arrayOfString;
-		for (i = (arrayOfString = args).length, b = 0; b < i;) {
-			String string = arrayOfString[b];
-			sb.append(String.valueOf(string) + " ");
-			b++;
+		for (String string : args) {
+			sb.append(string);
 		}
 
-		this.targetPath = String.valueOf(System.getProperty("user.dir")) + File.separator + "test" + File.separator
-				+ String.join("_", (CharSequence[]) sb.toString().split(" "));
+		this.targetPath = System.getProperty("user.dir") + File.separator + "test" + File.separator
+				+ String.join("_", sb.toString().split(" "));
 	}
 
 	public ChromeOptions getOption(String... proxyIP) {
@@ -106,14 +135,15 @@ public class ToolUtil
 			option.setProxy(proxy);
 			System.out.println(proxy.getHttpProxy());
 		}
-		String[] optionArguments = { "--headless", 
-				"--start-maximized", 
-				"--hide-scrollbars", 
+		String[] optionArguments = {
+				"--headless",
+				"--start-maximized",
+				"--hide-scrollbars",
 				"--no-sanlbox",
-				"--disable-gpu", 
-				"--ignore-certificate-errors", 
+				"--disable-gpu",
+				"--ignore-certificate-errors",
 				"--incognito", "disabled-infobars",
-				"--window-size=1920,1080", 
+				"--window-size=1920,1080",
 				"--disable-blink-features=AutomationControlled",
 				"user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36",
 				"--remote-allow-origins=*"
@@ -131,7 +161,7 @@ public class ToolUtil
 		ChromeDriver chromeDriver = new ChromeDriver(getOption(new String[0]));
 		chromeDriver.navigate().to("https://www.apple.com/jp");
 		randomSleep();
-		savePicture((WebDriver) chromeDriver);
+//		savePicture((WebDriver) chromeDriver);
 		chromeDriver.findElement(By.className("ac-gn-link-iphone")).click();
 		randomSleep();
 		Pattern pattern = Pattern.compile(".*iphone[-_].*", 2);
@@ -201,12 +231,12 @@ public class ToolUtil
 		}
 	}
 
-	public static void main(String[] args) {
-		try {
-			(new ToolUtil()).randomSleep();
-		} catch (Exception e) {
-
-			e.printStackTrace();
+		public static void main(String[] args) {
+			try {
+				(new ToolUtil()).getItemsInfo();
+			} catch (Exception e) {
+	
+				e.printStackTrace();
+			}
 		}
-	}
 }

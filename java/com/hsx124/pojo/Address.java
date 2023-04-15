@@ -37,4 +37,9 @@ public class Address {
 	public void setStreet2(String street2) {
 		this.street2 = street2;
 	}
+
+	@Override
+	public String toString() {
+		return "Address [state=" + state + ", city=" + city + ", street=" + street + ", street2=" + street2 + "]";
+	}
 }

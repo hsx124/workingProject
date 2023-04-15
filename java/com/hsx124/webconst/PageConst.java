@@ -2,12 +2,14 @@
 package com.hsx124.webconst;
 
 public interface PageConst {
+	/*アクセスURL*/
 	public static final String ACCESS_URL = "https://www.apple.com/jp";
-
+	/*Iphone url*/
+	public static final String ACCESS_URL_IPHONE = "https://www.apple.com/jp/iphone/";
 	public static final String NO_TRADE_IN_ID = "noTradeIn_label";
 
 	public static final String NO_APPLE_CARE_ID = "applecareplus_59_noapplecare_label";
-
+	/*カートに追加*/
 	public static final String ADD_TO_CART = "add-to-cart";
 
 	public static final String PROCEED = "proceed";
@@ -57,4 +59,8 @@ public interface PageConst {
 	public static final String GIFT_CARD_INPUT = "checkout.billing.billingOptions.selectedBillingOptions.giftCard.giftCardInput.giftCard";
 
 	public static final String EXCEL_SHEETNAME_BUY_INFO = "購入情報";
+
+	public static final Integer PAGE_WAIT_TIME = 6;
+	public static final Integer SCRIPT_WAIT_TIME = 1;
+	public static final Integer PAGE_LOAD_TIME = 6;
 }
