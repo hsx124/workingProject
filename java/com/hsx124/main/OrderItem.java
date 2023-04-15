@@ -26,12 +26,11 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.StaleElementReferenceException;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chromium.ChromiumDriver;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -60,7 +59,8 @@ public class OrderItem
 		FileWriter fw = new FileWriter(outputfile);
 		PrintWriter out = new PrintWriter(fw, true);
 		long starTime = System.currentTimeMillis();
-		this.datas.stream().parallel().forEach(ur -> {
+		datas.parallelStream().forEach(ur -> {
+
 			ChromeDriver chromeDriver = null;
 
 			ToolUtil tl = null;
@@ -71,7 +71,9 @@ public class OrderItem
 				tl = new ToolUtil();
 
 				tl.init();
-
+				tl.setSavePicturePath(ur.getLastName(), ur.getFirstName(), ur.getIhpone().getModel(),
+						ur.getIhpone().getScreenSize(), ur.getIhpone().getColor(), ur.getIhpone().getCapacity(), " ",
+						LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddhhmmssSS")));
 				System.out.println("####################" + ur.getLastName() + "　" + ur.getFirstName() + "　"
 						+ ur.getIhpone().getModel() + "　" + ur.getIhpone().getColor() + "　"
 						+ ur.getIhpone().getScreenSize() + "　" + ur.getIhpone().getCapacity()
@@ -94,100 +96,58 @@ public class OrderItem
 
 				chromeDriver.executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", command);
 
-//				chromeDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(2));
+				Actions action = new Actions(chromeDriver);
 
-				chromeDriver.manage().timeouts().scriptTimeout(Duration.ofMinutes(1));
+				chromeDriver.navigate().to("https://www.apple.com/jp/iphone/");
+				tl.setManage(chromeDriver);
+				//				chromeDriver.manage().window().maximize();
 
-				chromeDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(2));
+				WebDriverWait wait = new WebDriverWait(chromeDriver, Duration.ofSeconds(6));
+				//				tl.savePicture(chromeDriver);
 
-				Actions action = new Actions((WebDriver) chromeDriver);
+				List<WebElement> itemsList = chromeDriver
+						.findElements(By.cssSelector(".chapternav-items li a span"));
 
-				chromeDriver.navigate().to("https://www.apple.com/jp");
-
-				chromeDriver.manage().window().maximize();
-
-				System.out.println("アップルサイトへのアクセスします。");
-
-				out.println("アップルサイトへのアクセスします。");
-				WebDriverWait wait = new WebDriverWait((WebDriver) chromeDriver, Duration.ofSeconds(2000L));
-				tl.setSavePicturePath(ur.getLastName(), ur.getFirstName(), ur.getIhpone().getModel(),
-						ur.getIhpone().getScreenSize(), ur.getIhpone().getColor(), ur.getIhpone().getCapacity(),
-						LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddhhmmssSS")));
-				
-				while (true) {
-					WebElement linkIphone = null;
-					try {
-						linkIphone = chromeDriver.findElement(By.linkText("iPhone"));
-						if (linkIphone != null) {
-							linkIphone.click();
-							System.out.println("iPhoneリンクをクリックします。");
-							out.println("iPhoneリンクをクリックします。");
-							break;
-						}
-						System.out.println(linkIphone);
-					} catch (NoSuchElementException e) {
-						System.out.println(linkIphone);
-
-						tl.folderRename((WebDriver) chromeDriver, ur, out);
-
-						return;
-					}
-
-					action.moveToElement(linkIphone).pause(500L).click().build().perform();
+				if (ur.getIhpone().getModel().contains("iPhone 12 mini")) {
+					ur.getIhpone().setModel("iPhone 12");
+				} else if (ur.getIhpone().getModel().contains("iPhone 13 mini")) {
+					ur.getIhpone().setModel("iPhone 13");
+				} else if (ur.getIhpone().getModel().contains("iPhone 13 Pro Max")) {
+					ur.getIhpone().setModel("iPhone 13 Pro");
+				} else if (ur.getIhpone().getModel().contains("iPhone 14 Pro Max")) {
+					ur.getIhpone().setModel("iPhone 14 Pro");
 				}
 
-				Thread.sleep(1000L);
-
-				try {
-					while (true) {
-						List<WebElement> itemsList = chromeDriver
-								.findElements(By.cssSelector(".chapternav-items li a span"));
-
-						if (ur.getIhpone().getModel().contains("iPhone 12 mini")) {
-							ur.getIhpone().setModel("iPhone 12");
-						} else if (ur.getIhpone().getModel().contains("iPhone 13 mini")) {
-							ur.getIhpone().setModel("iPhone 13");
-						} else if (ur.getIhpone().getModel().contains("iPhone 13 Pro Max")) {
-							ur.getIhpone().setModel("iPhone 13 Pro");
-						} else if (ur.getIhpone().getModel().contains("iPhone 14 Pro Max")) {
-							ur.getIhpone().setModel("iPhone 14 Pro");
-						}
-
-						String model = null;
-
-						Pattern pattern = Pattern.compile(ur.getIhpone().getModel(), 2);
-						Matcher matcher = null;
-						for (WebElement webEle : itemsList) {
-							model = webEle.getText();
-							matcher = pattern.matcher(model);
-							if (matcher.matches()) {
-								action.moveToElement(webEle).pause(500L).click().build().perform();
+				String model = null;
+				List<WebElement> iphoneLinkList = chromeDriver
+						.findElements(By.cssSelector(".chapternav-items li a"));
+				Pattern pattern = Pattern.compile(ur.getIhpone().getModel(), 2);
+				Matcher matcher = null;
+				label: for (WebElement webEle : itemsList) {
+					model = webEle.getText();
+					matcher = pattern.matcher(model);
+					if (matcher.matches()) {
+						//						action.moveToElement(webEle).pause(500L).click().build().perform();
+						for (WebElement webElement : iphoneLinkList) {
+							String link = webElement.getAttribute("href");
+							if (link.replace("-", " ").contains(model.toLowerCase())) {
+								chromeDriver.get(link);
+								chromeDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
 								System.out.println("対象機種を選択します。" + ur.getIhpone().getModel());
 								out.println("対象機種を選択します。" + ur.getIhpone().getModel());
-								break;
+								break label;
 							}
 						}
-						if (model != null && model.equals(ur.getIhpone().getModel())) {
-							break;
-						}
-						if (!chromeDriver.getCurrentUrl().contains("iphone-14-pro")) {
-							return;
-						}
 					}
-				} catch (NoSuchElementException e1) {
-					e1.printStackTrace();
-
-					tl.folderRename((WebDriver) chromeDriver, ur, out);
-
-					return;
 				}
-
-				Thread.sleep(1000L);
-
+				tl.savePicture(chromeDriver);
 				try {
-					WebElement buyButton = chromeDriver.findElement(By.className("ac-ln-button"));
+					wait.until(ExpectedConditions.elementToBeClickable(By.className("ac-ln-button")));
+					String ihponeTargetLink = chromeDriver.findElement(By.className("ac-ln-button"))
+							.getAttribute("href");
 
-					action.moveToElement(buyButton).pause(500L).click().perform();
+					chromeDriver.get(ihponeTargetLink);
+
 					System.out.println("購入ボタンを押下します。");
 					out.println("購入ボタンを押下します。");
 				} catch (NoSuchElementException e2) {
@@ -199,37 +159,23 @@ public class OrderItem
 
 					chromeDriver.findElement(By.className("ac-ln-button")).click();
 				}
+				tl.savePicture(chromeDriver);
+				//				chromeDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
+				//				chromeDriver.manage().timeouts().scriptTimeout(Duration.ofMinutes(1));
+				//				chromeDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(26));
+				tl.setManage(chromeDriver);
+				WebDriverWait wait1 = new WebDriverWait(chromeDriver, Duration.ofSeconds(5));
+				wait1.until(ExpectedConditions.presenceOfElementLocated(
+						By.cssSelector("input[value='" + ur.getIhpone().getScreenSize() + "']+label")));
+				WebElement sizeElement = chromeDriver.findElement(
+						By.cssSelector("input[value='" + ur.getIhpone().getScreenSize() + "']+label"));
 
-				tl.randomSleep();
+				action.moveToElement(sizeElement).pause(500L).click().build().perform();
 
-				while (true) {
-					try {
-						WebElement sizeElement = chromeDriver.findElement(
-								By.cssSelector("input[value='" + ur.getIhpone().getScreenSize() + "']+label"));
+				System.out.println("購入する機種のサイズを選びます。" + ur.getIhpone().getScreenSize());
 
-						action.moveToElement(sizeElement).pause(500L).click().build().perform();
-
-						System.out.println("購入する機種のサイズを選びます。" + ur.getIhpone().getScreenSize());
-
-						out.println("購入する機種のサイズを選びます。" + ur.getIhpone().getScreenSize());
-						if (sizeElement != null) {
-							break;
-						}
-					} catch (NoSuchElementException e) {
-						System.out.println("この機種" + ur.getIhpone().getModel() + "はサイズ選べません！");
-						out.println("この機種" + ur.getIhpone().getModel() + "はサイズ選べません！");
-						try {
-							chromeDriver.findElement(By.id("dimensionScreensize"));
-						} catch (NoSuchElementException e1) {
-							break;
-						}
-						return;
-					} catch (StaleElementReferenceException staleElementReferenceException) {
-					}
-				}
-
-				Thread.sleep(800L);
-
+				out.println("購入する機種のサイズを選びます。" + ur.getIhpone().getScreenSize());
+				tl.savePicture(chromeDriver);
 				WebElement colorElement = chromeDriver.findElement(By
 						.cssSelector("ul.colornav-items > li>input[value='" + ur.getIhpone().getColor() + "']+label"));
 
@@ -240,9 +186,7 @@ public class OrderItem
 				System.out.println("購入する機種の色を選択します。" + ur.getIhpone().getColor());
 
 				out.println("購入する機種の色を選択します。" + ur.getIhpone().getColor());
-
-				Thread.sleep(800L);
-
+				tl.savePicture(chromeDriver);
 				WebElement mSizeElement = chromeDriver
 						.findElement(By.xpath("//input[@value='" + ur.getIhpone().getCapacity() + "']"));
 
@@ -251,9 +195,7 @@ public class OrderItem
 				System.out.println("購入する機種の容量を選びます。" + ur.getIhpone().getCapacity());
 
 				out.println("購入する機種の容量を選びます。" + ur.getIhpone().getCapacity());
-
-				Thread.sleep(800L);
-
+				tl.savePicture(chromeDriver);
 				WebElement noTradeInElement = chromeDriver.findElement(By.id("noTradeIn_label"));
 
 				action.moveToElement(noTradeInElement).pause(500L).click().build().perform();
@@ -261,60 +203,46 @@ public class OrderItem
 				System.out.println("下取りに出さない。。。");
 
 				out.println("下取りに出さない。。。");
+				tl.savePicture(chromeDriver);
+				WebElement care = chromeDriver.findElement(By.id("applecareplus_59_noapplecare_label"));
 
-				Thread.sleep(1500L);
+				System.out.println("AppleCare加入しない。。");
 
-				try {
-					WebElement care = chromeDriver.findElement(By.id("applecareplus_59_noapplecare_label"));
-
-					System.out.println("AppleCare加入しない。。");
-
-					out.println("AppleCare加入しない。。");
-
-					if (!care.isDisplayed()) {
-						care = chromeDriver.findElement(By.id("applecareplus_58_noapplecare"));
-					}
-
-					action.moveToElement(care).pause(1000L).click().build().perform();
-				} catch (NoSuchElementException e) {
-					WebElement care = chromeDriver.findElement(By.id("applecareplus_58_noapplecare"));
-
-					action.moveToElement(care).pause(1000L).click().build().perform();
+				out.println("AppleCare加入しない。。");
+				tl.savePicture(chromeDriver);
+				if (!care.isDisplayed()) {
+					care = chromeDriver.findElement(By.id("applecareplus_58_noapplecare"));
 				}
 
-				tl.randomSleep();
+				action.moveToElement(care).pause(1000L).click().build().perform();
 
 				chromeDriver.findElement(By.name("add-to-cart")).click();
 
 				System.out.println("バックに追加します。。。");
 
 				out.println("バックに追加します。。。");
-
-				tl.randomSleep();
-
+				tl.savePicture(chromeDriver);
 				WebElement proccedBtn = chromeDriver.findElement(By.name("proceed"));
 
-				Actions ac = new Actions((WebDriver) chromeDriver);
+				Actions ac = new Actions(chromeDriver);
 
 				ac.moveToElement(proccedBtn).release().pause(800L).click().build().perform();
 
 				System.out.println("バックを確認します。。");
 
 				out.println("バックを確認します。。");
-
-				tl.randomSleep();
-
+				tl.savePicture(chromeDriver);
 				WebElement countSelect = chromeDriver.findElement(By.tagName("select"));
 
 				if (chromeDriver.getCurrentUrl().contains("/jp/shop/bag")) {
-					tl.savePicture((WebDriver) chromeDriver);
+					tl.savePicture(chromeDriver);
 
 					Select selectObjec = new Select(countSelect);
 
 					System.out.println("購入数量を設定します。。" + ur.getIhpone().getOrderCount() + "台");
 
 					out.println("購入数量を設定します。。" + ur.getIhpone().getOrderCount() + "台");
-
+					tl.savePicture(chromeDriver);
 					selectObjec.selectByValue(String.valueOf(ur.getIhpone().getOrderCount()));
 				} else {
 					proccedBtn.click();
@@ -326,9 +254,7 @@ public class OrderItem
 					selectObjec.selectByValue(String.valueOf(ur.getIhpone().getOrderCount()));
 				}
 
-				tl.savePicture((WebDriver) chromeDriver);
-
-				Thread.sleep(1000L);
+				tl.savePicture(chromeDriver);
 
 				((ChromiumDriver) chromeDriver).executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", command);
 
@@ -337,6 +263,7 @@ public class OrderItem
 				shopCheckout.click();
 				System.out.println("注文手続きへ。。");
 				out.println("注文手続きへ。。");
+				tl.savePicture(chromeDriver);
 				tl.randomSleep();
 				if ("ゲスト".equals(ur.getPayMethod())) {
 					try {
@@ -346,7 +273,7 @@ public class OrderItem
 						out.println("ゲストとしてログインします。。");
 						tl.randomSleep();
 					} catch (NoSuchElementException e) {
-						tl.folderRename((WebDriver) chromeDriver, ur, out);
+						tl.folderRename(chromeDriver, ur, out);
 
 						return;
 					}
@@ -367,15 +294,14 @@ public class OrderItem
 
 					tl.randomSleep();
 
-					tl.savePicture((WebDriver) chromeDriver);
+					tl.savePicture(chromeDriver);
 					WebElement passwordInput = chromeDriver.findElement(By.id("password_text_field"));
 					passwordInput.sendKeys(new CharSequence[] { "Hsx19900829" });
 					passwordInput.sendKeys(
 							new CharSequence[] { Keys.chord(new CharSequence[] { (CharSequence) Keys.ENTER }) });
 					chromeDriver.switchTo().window(windowHandle);
 				}
-				Thread.sleep(800L);
-				tl.savePicture((WebDriver) chromeDriver);
+				tl.savePicture(chromeDriver);
 				WebElement takeItem = chromeDriver
 						.findElement(By.cssSelector("label[for='fulfillmentOptionButtonGroup1']"));
 				takeItem.click();
@@ -406,9 +332,7 @@ public class OrderItem
 					}
 				}
 
-				tl.savePicture((WebDriver) chromeDriver);
-
-				Thread.sleep(800L);
+				tl.savePicture(chromeDriver);
 
 				List<WebElement> storeList = chromeDriver
 						.findElements(By.cssSelector("ul.rt-storelocator-store-group li"));
@@ -428,14 +352,14 @@ public class OrderItem
 
 					Pattern pt = Pattern.compile("(apple)\\s*(新宿|丸の内|銀座|表参道).*", 2);
 
-					Matcher matcher = pt.matcher(storeName);
+					Matcher matcher1 = pt.matcher(storeName);
 
-					if (matcher.matches()) {
+					if (matcher1.matches()) {
 						System.out.println("受け取りストアを選択します。" + storeName);
 
 						out.println("受け取りストアを選択します。" + storeName);
 
-						tl.savePicture((WebDriver) chromeDriver);
+						tl.savePicture(chromeDriver);
 						webElement.click();
 						break;
 					}
@@ -443,7 +367,7 @@ public class OrderItem
 				if (enabledCount == 3 || enabledCount == 4) {
 					System.out.println("受け取れる店舗ありません!!!");
 					out.println("受け取れる店舗ありません!!!");
-					tl.savePicture((WebDriver) chromeDriver);
+					tl.savePicture(chromeDriver);
 					String targetPath = tl.getTargetPath();
 					File file = new File(targetPath);
 					file.renameTo(new File(String.valueOf(targetPath) + "_受け取るストアなし"));
@@ -465,7 +389,7 @@ public class OrderItem
 
 				Thread.sleep(1000L);
 
-				tl.savePicture((WebDriver) chromeDriver);
+				tl.savePicture(chromeDriver);
 
 				try {
 					WebElement rcvInfoElement = chromeDriver
@@ -475,12 +399,10 @@ public class OrderItem
 					System.out.println("ご注文の商品はどなたが受け取りになりますか？" + rcvInfoElement.getText());
 					out.println("ご注文の商品はどなたが受け取りになりますか？" + rcvInfoElement.getText());
 				} catch (NoSuchElementException e) {
-					tl.folderRename((WebDriver) chromeDriver, ur, out);
+					tl.folderRename(chromeDriver, ur, out);
 
 					return;
 				}
-
-				Thread.sleep(1500L);
 
 				chromeDriver.findElement(By.id("checkout.pickupContact.selfPickupContact.selfContact.address.lastName"))
 						.sendKeys(new CharSequence[] { ur.getLastName() });
@@ -519,9 +441,7 @@ public class OrderItem
 
 				out.println("支払いに進ボタン押下。。");
 
-				tl.savePicture((WebDriver) chromeDriver);
-
-				Thread.sleep(1300L);
+				tl.savePicture(chromeDriver);
 
 				if (ur.getCreditCard() == null) {
 					chromeDriver.findElement(By.id(
@@ -548,7 +468,7 @@ public class OrderItem
 							"checkout.billing.billingOptions.selectedBillingOptions.giftCard.billingAddress.address.postalCode"))
 							.sendKeys(new CharSequence[] { ur.getGiftCard().getPostCode() });
 
-					tl.savePicture((WebDriver) chromeDriver);
+					tl.savePicture(chromeDriver);
 
 					WebElement addressElement = chromeDriver.findElement(By.id(
 							"checkout.billing.billingOptions.selectedBillingOptions.giftCard.billingAddress.address.state"));
@@ -603,7 +523,7 @@ public class OrderItem
 							"checkout.billing.billingOptions.selectedBillingOptions.creditCard.billingAddress.address.postalCode"))
 							.sendKeys(new CharSequence[] { ur.getCreditCard().getPostCode() });
 
-					tl.savePicture((WebDriver) chromeDriver);
+					tl.savePicture(chromeDriver);
 
 					WebElement addressElement = chromeDriver.findElement(By.id(
 							"checkout.billing.billingOptions.selectedBillingOptions.creditCard.billingAddress.address.state"));
@@ -631,33 +551,29 @@ public class OrderItem
 					out.println("クレジットカードで支払います。。");
 				}
 
-				Thread.sleep(1000L);
+				tl.savePicture(chromeDriver);
 
-				tl.savePicture((WebDriver) chromeDriver);
-
-				chromeDriver.findElement(By.id("rs-checkout-continue-button-bottom")).click();
-
-				System.out.println("注文の確認ボタンを押下します。。");
-
-				out.println("注文の確認ボタンを押下します。。");
-
-				Thread.sleep(1500L);
-
-				chromeDriver.findElement(By.id("rs-checkout-continue-button-bottom")).click();
-
-				System.out.println("最後の注文ボタンを押下します。。");
-				out.println("最後の注文ボタンを押下します。。");
-				Thread.sleep(4300L);
-				tl.savePicture((WebDriver) chromeDriver);
+				//				chromeDriver.findElement(By.id("rs-checkout-continue-button-bottom")).click();
+				//
+				//				System.out.println("注文の確認ボタンを押下します。。");
+				//
+				//				out.println("注文の確認ボタンを押下します。。");
+				//
+				//				chromeDriver.findElement(By.id("rs-checkout-continue-button-bottom")).click();
+				//
+				//				System.out.println("最後の注文ボタンを押下します。。");
+				//				out.println("最後の注文ボタンを押下します。。");
+				//				Thread.sleep(4300L);
+				tl.savePicture(chromeDriver);
 				do {
 					orderNo = "";
 					orderNo = chromeDriver.findElement(By.cssSelector("a.as-buttonlink")).getText();
 					System.out.println(String.valueOf(ur.getLastName()) + "　" + ur.getFirstName() + "　" + orderNo);
 					out
 							.println(String.valueOf(ur.getLastName()) + "　" + ur.getFirstName() + "　" + orderNo);
-					tl.savePicture((WebDriver) chromeDriver);
+					tl.savePicture(chromeDriver);
 				} while (orderNo.trim().equals(""));
-				tl.savePicture((WebDriver) chromeDriver);
+				tl.savePicture(chromeDriver);
 				long endTime = System.currentTimeMillis();
 				System.out.println("####################" + ur.getLastName() + "　" + ur.getFirstName() + "　"
 						+ ur.getIhpone().getModel() + "　" + ur.getIhpone().getColor() + "　"
@@ -671,9 +587,10 @@ public class OrderItem
 				out.println(String.valueOf((endTime - starTime) / 1000L) + "秒かかりました。。");
 			} catch (Exception e) {
 				e.printStackTrace();
+
 				try {
-					tl.folderRename((WebDriver) chromeDriver, ur, out);
-					tl.savePicture((WebDriver) chromeDriver);
+					tl.folderRename(chromeDriver, ur, out);
+					//					tl.savePicture(chromeDriver);
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
@@ -683,11 +600,13 @@ public class OrderItem
 				System.out.println(String.valueOf((endTime - starTime) / 1000L) + "秒かかりました。。");
 
 				out.println(String.valueOf((endTime - starTime) / 1000L) + "秒かかりました。。");
+				chromeDriver.quit();
 			} finally {
 				chromeDriver.quit();
 			}
 		});
 		out.close();
+
 	}
 
 	public void readInfoFromExcel() throws Exception, FileNotFoundException, IOException {

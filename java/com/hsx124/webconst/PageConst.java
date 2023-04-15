@@ -57,4 +57,8 @@ public interface PageConst {
 	public static final String GIFT_CARD_INPUT = "checkout.billing.billingOptions.selectedBillingOptions.giftCard.giftCardInput.giftCard";
 
 	public static final String EXCEL_SHEETNAME_BUY_INFO = "購入情報";
+
+	public static final Integer PAGE_WAIT_TIME = 6;
+	public static final Integer SCRIPT_WAIT_TIME = 1;
+	public static final Integer PAGE_LOAD_TIME = 6;
 }
